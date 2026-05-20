@@ -4,7 +4,7 @@ import { io, Socket } from 'socket.io-client';
 import { Alert } from 'react-native';
 import * as Notifications from 'expo-notifications';
 
-const SOCKET_URL = process.env.EXPO_PUBLIC_SOCKET_URL || 'http://localhost:5000';
+const SOCKET_URL = process.env.EXPO_PUBLIC_SOCKET_URL || 'https://lifelink-at8v.onrender.com';
 
 interface SocketState {
   socket: Socket | null;
