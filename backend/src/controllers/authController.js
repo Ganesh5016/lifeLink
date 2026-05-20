@@ -31,16 +31,33 @@ exports.register = async (req, res, next) => {
       return res.status(409).json({ error: 'Email already registered' });
     }
 
-    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const userData = {
+      name,
+      email,
+      password,
+      role: role || 'donor',
+    };
 
-    const user = await User.create({
-      name, email, password, phone, role: role || 'donor',
-      bloodGroup, age, weight,
-      emailVerificationToken: crypto
-        .createHash('sha256')
-        .update(verificationToken)
-        .digest('hex'),
-    });
+    // Sanitize phone number (strip spaces) and omit if empty
+    if (phone && phone.trim() !== '') {
+      userData.phone = phone.replace(/\s+/g, '');
+    }
+
+    // Omit bloodGroup if empty to avoid enum validation failure
+    if (bloodGroup && bloodGroup.trim() !== '') {
+      userData.bloodGroup = bloodGroup;
+    }
+
+    if (age) userData.age = Number(age);
+    if (weight) userData.weight = Number(weight);
+
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    userData.emailVerificationToken = crypto
+      .createHash('sha256')
+      .update(verificationToken)
+      .digest('hex');
+
+    const user = await User.create(userData);
 
     // Send verification email
     const verifyUrl = `${process.env.CLIENT_URL}/verify-email/${verificationToken}`;
