@@ -31,22 +31,38 @@ export default function MapScreen({ navigation }: any) {
   }, []);
 
   const initLocation = async () => {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      setLoading(false);
-      return;
-    }
-    const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-    const coords = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
-    setUserLocation(coords);
-    updateLocation(coords.latitude, coords.longitude);
-    fetchNearby(coords.latitude, coords.longitude);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setLoading(false);
+        return;
+      }
+      
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      const coords = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
+      setUserLocation(coords);
+      updateLocation(coords.latitude, coords.longitude);
+      fetchNearby(coords.latitude, coords.longitude);
 
-    // Watch location
-    Location.watchPositionAsync(
-      { accuracy: Location.Accuracy.Balanced, timeInterval: 30000, distanceInterval: 50 },
-      (loc) => updateLocation(loc.coords.latitude, loc.coords.longitude)
-    );
+      // Watch location defensively
+      Location.watchPositionAsync(
+        { accuracy: Location.Accuracy.Balanced, timeInterval: 30000, distanceInterval: 50 },
+        (loc) => {
+          if (loc?.coords) {
+            updateLocation(loc.coords.latitude, loc.coords.longitude);
+          }
+        }
+      ).catch(() => {});
+    } catch (error) {
+      console.log('Error initializing location, using fallback:', error);
+      // Graceful fallback to default coordinates to avoid app crashing
+      const fallbackCoords = { latitude: 13.0827, longitude: 80.2707 }; // Chennai fallback
+      setUserLocation(fallbackCoords);
+      updateLocation(fallbackCoords.latitude, fallbackCoords.longitude);
+      fetchNearby(fallbackCoords.latitude, fallbackCoords.longitude);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fetchNearby = async (lat: number, lng: number) => {
@@ -176,18 +192,21 @@ export default function MapScreen({ navigation }: any) {
           })}
 
           {/* Real-time donor locations from socket */}
-          {Object.entries(donorLocations).map(([id, loc]: any) => (
-            <Marker
-              key={`live-${id}`}
-              coordinate={{ latitude: loc.coordinates[1], longitude: loc.coordinates[0] }}
-              title={`${loc.name} (Live)`}
-              description={`Blood: ${loc.bloodGroup}`}
-            >
-              <View style={styles.liveMarker}>
-                <View style={styles.livePulse} />
-              </View>
-            </Marker>
-          ))}
+          {Object.entries(donorLocations).map(([id, loc]: any) => {
+            if (!loc?.coordinates || loc.coordinates.length < 2) return null;
+            return (
+              <Marker
+                key={`live-${id}`}
+                coordinate={{ latitude: loc.coordinates[1], longitude: loc.coordinates[0] }}
+                title={`${loc.name || 'Live Donor'} (Live)`}
+                description={`Blood: ${loc.bloodGroup || 'Unknown'}`}
+              >
+                <View style={styles.liveMarker}>
+                  <View style={styles.livePulse} />
+                </View>
+              </Marker>
+            );
+          })}
         </MapView>
       )}
 

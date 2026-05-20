@@ -58,6 +58,7 @@ export default function HomeScreen({ navigation }: any) {
   const { user } = useAuthStore();
   const { activeRequests } = useSocketStore();
   const [stats, setStats] = useState({ active: 0, fulfilled: 0, donors: 0 });
+  const [dbRequests, setDbRequests] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const scrollY = useRef(new Animated.Value(0)).current;
 
@@ -66,6 +67,19 @@ export default function HomeScreen({ navigation }: any) {
       const { data } = await api.get('/requests/stats');
       setStats({ active: data.active || 0, fulfilled: data.fulfilled || 0, donors: data.totalDonors || 0 });
     } catch {}
+
+    // Fetch live requests from other accounts!
+    try {
+      const { data } = await api.get('/requests?status=active');
+      const allRequests = data.requests || [];
+      const others = allRequests.filter((req: any) => {
+        const requesterId = req.requestedBy?._id || req.requestedBy;
+        return requesterId !== user?._id;
+      });
+      setDbRequests(others);
+    } catch (err) {
+      console.log('Error loading requests:', err);
+    }
   };
 
   useEffect(() => { fetchStats(); }, []);
@@ -76,13 +90,14 @@ export default function HomeScreen({ navigation }: any) {
     setRefreshing(false);
   };
 
-  const headerOpacity = scrollY.interpolate({ inputRange: [0, 80], outputRange: [1, 0], extrapolate: 'clamp' });
+  const getGreeting = () => {
+    const hours = new Date().getHours();
+    if (hours < 12) return 'Morning';
+    if (hours < 17) return 'Afternoon';
+    return 'Evening';
+  };
 
-  const demoRequests = activeRequests.length > 0 ? activeRequests : [
-    { _id: '1', bloodGroup: 'O+', hospitalName: 'Apollo Hospital', unitsRequired: 3, priority: 'critical', location: { address: 'Chennai' } },
-    { _id: '2', bloodGroup: 'AB-', hospitalName: 'AIIMS Delhi', unitsRequired: 2, priority: 'high', location: { address: 'New Delhi' } },
-    { _id: '3', bloodGroup: 'B+', hospitalName: 'Fortis Hospital', unitsRequired: 4, priority: 'medium', location: { address: 'Mumbai' } },
-  ];
+  const headerOpacity = scrollY.interpolate({ inputRange: [0, 80], outputRange: [1, 0], extrapolate: 'clamp' });
 
   return (
     <View style={styles.container}>
@@ -100,7 +115,7 @@ export default function HomeScreen({ navigation }: any) {
             <Animated.View style={{ opacity: headerOpacity }}>
               <View style={styles.heroTop}>
                 <View>
-                  <Text style={styles.greeting}>Good {new Date().getHours() < 12 ? 'Morning' : 'Evening'} 👋</Text>
+                  <Text style={styles.greeting}>Good {getGreeting()} 👋</Text>
                   <Text style={styles.heroName}>{user?.name?.split(' ')[0]}</Text>
                 </View>
                 <TouchableOpacity
@@ -210,13 +225,19 @@ export default function HomeScreen({ navigation }: any) {
                 <Text style={styles.liveText}>LIVE</Text>
               </View>
             </View>
-            {demoRequests.slice(0, 5).map(req => (
-              <FeedItem
-                key={req._id}
-                req={req}
-                onPress={() => navigation.navigate('RequestDetail', { requestId: req._id })}
-              />
-            ))}
+            {dbRequests.length === 0 ? (
+              <View style={styles.emptyRequestsCard}>
+                <Text style={styles.emptyRequestsText}>No active requests from other accounts</Text>
+              </View>
+            ) : (
+              dbRequests.slice(0, 5).map(req => (
+                <FeedItem
+                  key={req._id}
+                  req={req}
+                  onPress={() => navigation.navigate('RequestDetail', { requestId: req._id })}
+                />
+              ))
+            )}
             <TouchableOpacity
               onPress={() => navigation.navigate('Requests')}
               style={styles.viewAllBtn}
@@ -283,4 +304,6 @@ const styles = StyleSheet.create({
   liveText: { color: '#ef4444', fontSize: 10, fontWeight: '700' },
   viewAllBtn: { marginTop: 6, alignItems: 'center', padding: 12 },
   viewAllText: { color: '#ef4444', fontSize: 14, fontWeight: '600' },
+  emptyRequestsCard: { backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: 14, padding: 24, alignItems: 'center', justifyContent: 'center', borderStyle: 'dashed', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', marginBottom: 10 },
+  emptyRequestsText: { color: '#64748b', fontSize: 13, fontWeight: '500' },
 });
