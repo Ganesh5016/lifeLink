@@ -144,9 +144,11 @@ export default function MapPage() {
         fetchNearby(loc.lat, loc.lng);
       },
       () => {
-        // Default to India center
-        fetchNearby(20.5937, 78.9629);
-        setLoading(false);
+        // Default to Chennai fallback coordinates to avoid UI maps and filter state breakage
+        const fallbackLoc = { lat: 13.0827, lng: 80.2707 };
+        setUserLocation(fallbackLoc);
+        updateLocation(fallbackLoc.lat, fallbackLoc.lng);
+        fetchNearby(fallbackLoc.lat, fallbackLoc.lng);
       }
     );
   }, []);

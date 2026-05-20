@@ -57,7 +57,7 @@ export default function EmergencyPage() {
         const { latitude: lat, longitude: lng } = pos.coords;
         // Reverse geocode with Nominatim (free)
         try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&email=support@lifelink.com`);
           const data = await res.json();
           setLocation({ lat, lng, address: data.display_name || `${lat.toFixed(4)}, ${lng.toFixed(4)}` });
         } catch {
