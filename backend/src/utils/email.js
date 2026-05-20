@@ -1,11 +1,12 @@
 const nodemailer = require('nodemailer');
+const logger = require('./logger');
 
 const sendEmail = async (options) => {
   try {
     // Create a transporter
     const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: process.env.EMAIL_PORT,
+      host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+      port: parseInt(process.env.EMAIL_PORT || '587'),
       secure: false, // true for 465, false for other ports
       auth: {
         user: process.env.EMAIL_USER,
@@ -13,21 +14,31 @@ const sendEmail = async (options) => {
       },
     });
 
+    // Support both 'to' and 'email' formats
+    const to = options.to || options.email;
+    const subject = options.subject;
+    const html = options.html;
+    const text = options.text || options.message;
+
     // Define the email options
     const mailOptions = {
-      from: `LifeLink Support <${process.env.EMAIL_USER}>`,
-      to: options.email,
-      subject: options.subject,
-      text: options.message,
+      from: `"LifeLink Support 🩸" <${process.env.EMAIL_USER}>`,
+      to,
+      subject,
+      text,
+      html,
     };
 
     // Send the email
-    await transporter.sendMail(mailOptions);
-    console.log('Email sent successfully');
+    const info = await transporter.sendMail(mailOptions);
+    logger.info(`Email sent to ${to}: ${info.messageId}`);
+    return info;
   } catch (error) {
-    console.error('Error sending email:', error);
-    throw new Error('Email could not be sent');
+    logger.error('Error sending email:', error.message);
+    // Don't crash registration if email service fails or is misconfigured,
+    // but log it clearly and let the user register.
+    throw error;
   }
 };
 
-module.exports = sendEmail;
+module.exports = { sendEmail };
