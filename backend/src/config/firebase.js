@@ -8,11 +8,10 @@ if (!admin.apps.length) {
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL?.replace(/^["']|["']$/g, '');
 
   if (!projectId || !privateKey || !clientEmail) {
-    logger.error('❌ Firebase Admin SDK config is missing required environment variables:', {
-      FIREBASE_PROJECT_ID: projectId ? 'Loaded ✅' : 'MISSING ❌',
-      FIREBASE_PRIVATE_KEY: privateKey ? 'Loaded ✅' : 'MISSING ❌',
-      FIREBASE_CLIENT_EMAIL: clientEmail ? 'Loaded ✅' : 'MISSING ❌'
-    });
+    console.error('❌ Firebase Admin SDK config is missing required environment variables! Raw Values:');
+    console.error(`👉 FIREBASE_PROJECT_ID: ${process.env.FIREBASE_PROJECT_ID ? `"${process.env.FIREBASE_PROJECT_ID}"` : '❌ UNDEFINED (Missing in Render Dashboard)'}`);
+    console.error(`👉 FIREBASE_CLIENT_EMAIL: ${process.env.FIREBASE_CLIENT_EMAIL ? `"${process.env.FIREBASE_CLIENT_EMAIL}"` : '❌ UNDEFINED (Missing in Render Dashboard)'}`);
+    console.error(`👉 FIREBASE_PRIVATE_KEY: ${process.env.FIREBASE_PRIVATE_KEY ? `Loaded (${process.env.FIREBASE_PRIVATE_KEY.length} chars) ✅` : '❌ UNDEFINED (Missing in Render Dashboard)'}`);
   }
 
   try {
@@ -25,7 +24,7 @@ if (!admin.apps.length) {
     });
     logger.info('✅ Firebase Admin SDK initialized successfully');
   } catch (error) {
-    logger.error('❌ Failed to initialize Firebase Admin SDK:', error.message);
+    logger.error(`❌ Failed to initialize Firebase Admin SDK: ${error.message}`);
     throw error;
   }
 }
