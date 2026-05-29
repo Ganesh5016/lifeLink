@@ -17,16 +17,22 @@ const ROLES = [
 
 export default function RegisterScreen({ navigation }: any) {
   const { register, isLoading } = useAuthStore();
+  const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', password: '', role: 'donor', bloodGroup: '', phone: '' });
   const update = (k: string, v: string) => setForm(p => ({ ...p, [k]: v }));
 
   const handleRegister = async () => {
+    if (submitting || isLoading) return;
     if (!form.name || !form.email || !form.password) return Alert.alert('Error', 'Fill all required fields');
     if (form.role === 'donor' && !form.bloodGroup) return Alert.alert('Error', 'Please select your blood group');
+    
+    setSubmitting(true);
     try {
       await register(form);
     } catch (err: any) {
       Alert.alert('Registration Failed', err.response?.data?.error || 'Please try again');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -90,9 +96,9 @@ export default function RegisterScreen({ navigation }: any) {
               </View>
             )}
 
-            <TouchableOpacity onPress={handleRegister} disabled={isLoading} activeOpacity={0.9} style={{ marginTop: 8 }}>
+            <TouchableOpacity onPress={handleRegister} disabled={isLoading || submitting} activeOpacity={0.9} style={{ marginTop: 8 }}>
               <LinearGradient colors={['#dc2626', '#7f1d1d']} style={styles.submitBtn}>
-                {isLoading ? <ActivityIndicator color="white" /> : <Text style={styles.submitText}>🩸  Create Account</Text>}
+                {isLoading || submitting ? <ActivityIndicator color="white" /> : <Text style={styles.submitText}>🩸  Create Account</Text>}
               </LinearGradient>
             </TouchableOpacity>
           </View>

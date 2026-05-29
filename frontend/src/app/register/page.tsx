@@ -23,6 +23,7 @@ function RegisterForm() {
   const { register, firebaseLogin, isLoading } = useAuthStore();
 
   const [step, setStep] = useState(1);
+  const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
     role: searchParams.get('role') || 'donor',
     name: '', email: '', password: '', phone: '',
@@ -37,6 +38,8 @@ function RegisterForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting || isLoading) return;
+    setSubmitting(true);
     try {
       await register({
         ...form,
@@ -47,6 +50,8 @@ function RegisterForm() {
       router.push('/dashboard');
     } catch (err: any) {
       toast.error(err.response?.data?.error || 'Registration failed');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -265,8 +270,8 @@ function RegisterForm() {
                     <button type="button" onClick={handleBack} className="flex items-center gap-2 px-6 py-3 rounded-xl border border-white/10 text-slate-300 hover:bg-white/5">
                       <ArrowLeft size={16} /> Back
                     </button>
-                    <button type="submit" disabled={isLoading || (form.role === 'donor' && !form.bloodGroup)} className="btn-emergency flex-1 flex items-center justify-center gap-2 disabled:opacity-50">
-                      {isLoading ? (
+                    <button type="submit" disabled={isLoading || submitting || (form.role === 'donor' && !form.bloodGroup)} className="btn-emergency flex-1 flex items-center justify-center gap-2 disabled:opacity-50">
+                      {isLoading || submitting ? (
                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                       ) : (
                         <><Droplets size={18} /> Create Account</>

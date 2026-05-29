@@ -26,14 +26,15 @@ exports.register = async (req, res, next) => {
   try {
     const { name, email, password, phone, role, bloodGroup, age, weight } = req.body;
 
-    const existing = await User.findOne({ email });
+    const sanitizedEmail = email ? email.trim().toLowerCase() : email;
+    const existing = await User.findOne({ email: sanitizedEmail });
     if (existing) {
       return res.status(409).json({ error: 'Email already registered' });
     }
 
     const userData = {
       name,
-      email,
+      email: sanitizedEmail,
       password,
       role: role || 'donor',
     };
