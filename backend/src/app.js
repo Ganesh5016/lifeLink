@@ -20,6 +20,9 @@ const logger = require('./utils/logger');
 
 const app = express();
 
+// Trust reverse proxy (e.g. Render/Heroku load balancers) to get the correct client IP for rate limiting
+app.set('trust proxy', 1);
+
 // ──────────────────────────────────────────
 // Security Middleware
 // ──────────────────────────────────────────
@@ -41,7 +44,7 @@ const limiter = rateLimit({
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: 30, // Increased to 30 for smoother user/developer experience
   message: { error: 'Too many auth attempts, please try again later.' },
 });
 
