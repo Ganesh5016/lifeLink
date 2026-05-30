@@ -3,11 +3,11 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: [
-      'res.cloudinary.com',
-      'lh3.googleusercontent.com',
-      'via.placeholder.com',
-      'avatars.githubusercontent.com',
+    remotePatterns: [
+      { protocol: 'https', hostname: 'res.cloudinary.com' },
+      { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
+      { protocol: 'https', hostname: 'via.placeholder.com' },
+      { protocol: 'https', hostname: 'avatars.githubusercontent.com' },
     ],
   },
   // PWA support (add next-pwa for production)
