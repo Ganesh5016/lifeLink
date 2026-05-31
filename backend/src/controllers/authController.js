@@ -95,7 +95,10 @@ exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email }).select('+password +refreshToken');
+    // Sanitize email same way as registration (trim + lowercase)
+    const sanitizedEmail = email ? email.trim().toLowerCase() : email;
+
+    const user = await User.findOne({ email: sanitizedEmail }).select('+password +refreshToken');
     if (!user || !user.password) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
@@ -209,7 +212,8 @@ exports.refreshToken = async (req, res, next) => {
 exports.forgotPassword = async (req, res, next) => {
   try {
     const { email } = req.body;
-    const user = await User.findOne({ email });
+    const sanitizedEmail = email ? email.trim().toLowerCase() : email;
+    const user = await User.findOne({ email: sanitizedEmail });
 
     // Always return success to prevent email enumeration
     if (!user) return res.json({ message: 'If this email exists, a reset link has been sent.' });
